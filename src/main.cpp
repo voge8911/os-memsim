@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <cmath>
 #include "mmu.h"
 #include "pagetable.h"
 
@@ -39,6 +40,34 @@ int main(int argc, char **argv)
     while (command != "exit") {
         // Handle command
         // TODO: implement this!
+        std::vector<const char*> command_list;
+        const char *token;
+        token = std::strtok((char *)command.c_str(), " ");
+        //printf("%s\n", token);
+
+        if (strcmp(token, "create") == 0)
+        {
+            while (token != NULL)
+            {
+                command_list.push_back(token);
+                token = strtok(NULL, " ");
+            }
+            int text_size = std::stoi(command_list[1]);
+            int data_size = std::stoi(command_list[2]);
+            createProcess(text_size, data_size, mmu, page_table);
+        }
+        else if (strcmp(token, "allocate") == 0)
+        {
+
+        }
+        else if (strcmp(token, "set") == 0)
+        {
+
+        }
+        else if (strcmp(token, "print") == 0)
+        {
+
+        }
 
         // Get next command
         std::cout << "> ";
@@ -74,8 +103,11 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
 {
     // TODO: implement this!
     //   - create new process in the MMU
+    uint32_t pid = mmu->createProcess();
     //   - allocate new variables for the <TEXT>, <GLOBALS>, and <STACK>
+
     //   - print pid
+    printf("%d\n", pid);
 }
 
 void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table)
