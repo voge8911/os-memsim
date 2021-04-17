@@ -1,4 +1,5 @@
 #include "pagetable.h"
+#include <cmath>
 
 PageTable::PageTable(int page_size)
 {
@@ -32,6 +33,14 @@ void PageTable::addEntry(uint32_t pid, int page_number)
     int frame = 0; 
     // Find free frame
     // TODO: implement this!
+    if (_table[entry] == 0)
+    {
+        printf("Table entry %d is 0\n", page_number);
+        
+    } else {
+        printf("Table entry %d is not 0\n", page_number);
+    }
+    
     _table[entry] = frame;
 }
 
@@ -42,16 +51,22 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
     int page_number = 0;
     int page_offset = 0;
 
+    int n = (int)log2(_page_size); // n = number of bits for page offset
+    page_number = virtual_address >> n;
+    page_offset = (_page_size - 1) & virtual_address;
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
     
     // If entry exists, look up frame number and convert virtual to physical address
     int address = -1;
+    int frame_number = 0;
     if (_table.count(entry) > 0)
     {
         // TODO: implement this!
+        frame_number = _table[entry];
+        address = (_page_size * frame_number) + page_offset;
     }
-
+    
     return address;
 }
 
@@ -67,5 +82,6 @@ void PageTable::print()
     for (i = 0; i < keys.size(); i++)
     {
         // TODO: print all pages
+        
     }
 }

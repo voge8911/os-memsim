@@ -65,3 +65,22 @@ void Mmu::print()
         }
     }
 }
+
+DataType Mmu::stringToDataType(std::string string)
+{
+    if (string.compare("Char")) {
+        return DataType::Char;
+    } else if (string.compare("Double")) {
+        return DataType::Double;
+    } else if (string.compare("Float")) {
+        return DataType::Float;
+    } else if (string.compare("Int")) {
+        return DataType::Int;
+    } else if (string.compare("Long")) {
+        return DataType::Long;
+    } else if (string.compare("Short")) {
+        return DataType::Short;
+    } else {
+        return DataType::FreeSpace;
+    }
+}
