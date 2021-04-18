@@ -62,6 +62,14 @@ void Mmu::print()
         for (j = 0; j < _processes[i]->variables.size(); j++)
         {
             // TODO: print all variables (excluding <FREE_SPACE> entries)
+            if (_processes[i]->variables[j]->type != DataType::FreeSpace)
+            {
+                uint32_t pid = _processes[i]->pid;
+                std::string name = _processes[i]->variables[j]->name;
+                uint32_t virtual_addr = _processes[i]->variables[j]->virtual_address;
+                uint32_t size = _processes[i]->variables[j]->size;
+                printf("%5u | %-9s | %8u | %8u\n", pid, name.c_str(), virtual_addr, size);
+            }
         }
     }
 }

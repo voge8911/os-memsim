@@ -12,6 +12,8 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table);
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
 
+std::vector<int> pids;
+
 int main(int argc, char **argv)
 {
     // Ensure user specified page size as a command line parameter
@@ -33,24 +35,34 @@ int main(int argc, char **argv)
     Mmu *mmu = new Mmu(mem_size);
     PageTable *page_table = new PageTable(page_size);
 
-    // Prompt loop
-    std::string command;
-    std::cout << "> ";
-    std::getline (std::cin, command);
-    while (command != "exit") {
+    while (1) {
+        // Prompt input
+        std::string command;
+        std::cout << "> ";
+        std::getline (std::cin, command);
         // Handle command
         // TODO: implement this!
         std::vector<const char*> command_list;
         const char *token;
         token = std::strtok((char *)command.c_str(), " ");
-        //printf("%s\n", token);
 
-        if (strcmp(token, "create") == 0)
+        if (command == "" || strcmp(token, "") == 0) 
         {
-            while (token != NULL)
-            {
+            continue;
+        }
+        else if (command == "exit")
+        {
+            break;
+        }
+        else if (strcmp(token, "create") == 0)
+        {
+            while (token != NULL) {
                 command_list.push_back(token);
-                token = strtok(NULL, " ");
+                token = strtok(NULL, " "); 
+            }
+            if (command_list.size() <= 1) {
+                // error
+                continue;
             }
             int text_size = std::stoi(command_list[1]);
             int data_size = std::stoi(command_list[2]);
@@ -59,10 +71,13 @@ int main(int argc, char **argv)
         }
         else if (strcmp(token, "allocate") == 0)
         {
-            while (token != NULL)
-            {
+            while (token != NULL) {
                 command_list.push_back(token);
                 token = strtok(NULL, " ");
+            }
+            if (command_list.size() <= 1) {
+                // error
+                continue;
             }
             int pid = std::stoi(command_list[1]);
             std::string var_name = command_list[2];
@@ -75,16 +90,49 @@ int main(int argc, char **argv)
         }
         else if (strcmp(token, "set") == 0)
         {
-
+            
         }
         else if (strcmp(token, "print") == 0)
         {
+            while (token != NULL) {
+                command_list.push_back(token);
+                token = strtok(NULL, " ");
+            }
+            if (command_list.size() <= 1) {
+                // print error
+                continue;
+            }
+            std::string print_str = command_list[1];
 
+            if (print_str.compare("mmu") == 0) 
+            {
+                mmu->print();
+            } 
+            else if (print_str.compare("page") == 0) 
+            {
+                page_table->print();
+            } 
+            else if (print_str.compare("processes") == 0) 
+            {
+                // if pids are not empty, then print the pids
+                if (!pids.empty())
+                {
+                    for (int k=0; k < pids.size(); k++)
+                    {
+                        std::cout << pids[k] << std::endl;
+                    }
+                }
+            } 
+            else 
+            {
+                // Add error checking here for "print <PID>:<var_name>" 
+                size_t sep = print_str.find(":");
+                uint32_t pid = std::stoi(print_str.substr(0, sep));
+                std::string var_name = print_str.substr(sep + 1);
+                std::cout << pid << " " << var_name << std::endl;
+                
+            }
         }
-
-        // Get next command
-        std::cout << "> ";
-        std::getline (std::cin, command);
     }
 
     // Cean up
@@ -117,6 +165,7 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
     // TODO: implement this!
     //   - create new process in the MMU
     uint32_t pid = mmu->createProcess();
+    pids.push_back(pid);
     //   - allocate new variables for the <TEXT>, <GLOBALS>, and <STACK>
     //   - DataType is Char because `n` Chars is `n` bytes
     allocateVariable(pid, "<TEXT>"   , DataType::Char, text_size, mmu, page_table);
@@ -134,7 +183,8 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     int i;
     for (i=0; i < 10; i++)
     {
-        page_table->addEntry(pid, i); 
+        //page_table->addEntry(pid, i); 
+        
     }
        
     //   - if no hole is large enough, allocate new page(s)
