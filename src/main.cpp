@@ -13,6 +13,7 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
 
 std::vector<int> pids;
+std::vector<uint32_t> virtual_address;
 
 int main(int argc, char **argv)
 {
@@ -81,11 +82,10 @@ int main(int argc, char **argv)
             }
             int pid = std::stoi(command_list[1]);
             std::string var_name = command_list[2];
-            std::string type1 = command_list[3];
+            //std::string type1 = command_list[3];
             DataType type = mmu->stringToDataType(command_list[3]);
             uint32_t num_elements = (uint32_t)std::stoi(command_list[4]);
-
-            printf("pid = %d var_name = %s type = %s num_elements = %d\n", pid, var_name.c_str(), type1.c_str(), num_elements);
+            //printf("pid = %d var_name = %s type = %s num_elements = %d\n", pid, var_name.c_str(), type1.c_str(), num_elements);
             allocateVariable(pid, var_name, type, num_elements, mmu, page_table);
         }
         else if (strcmp(token, "set") == 0)
@@ -166,6 +166,7 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
     //   - create new process in the MMU
     uint32_t pid = mmu->createProcess();
     pids.push_back(pid);
+    virtual_address.push_back((uint32_t)0);
     //   - allocate new variables for the <TEXT>, <GLOBALS>, and <STACK>
     //   - DataType is Char because `n` Chars is `n` bytes
     allocateVariable(pid, "<TEXT>"   , DataType::Char, text_size, mmu, page_table);
@@ -178,27 +179,33 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
 void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table)
 {
     // TODO: implement this!
+    int size = mmu->sizeOfType(type) * num_elements;
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
-        
-    int i;
-    for (i=0; i < 10; i++)
-    {
-        //page_table->addEntry(pid, i); 
-        
-    }
-       
+    
+    page_table->addEntry(pid, num_elements); 
+    
+    
     //   - if no hole is large enough, allocate new page(s)
-    //memcpy();
+    
     //   - insert variable into MMU
-    //mmu->addVariableToProcess(pid, var_name, type, num_elements, virtual_address);
+    mmu->addVariableToProcess(pid, var_name, type, num_elements, virtual_address[pid - 1024]);
     //   - print virtual memory address
+    if (var_name.compare("<TEXT>") != 0 && var_name.compare("<GLOBALS>") != 0 && var_name.compare("<STACK>") != 0)
+    {
+        std::cout << virtual_address[pid - 1024] << std::endl;
+    }
+    virtual_address[pid - 1024] += (uint32_t)size;
 
 }
 
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory)
 {
     // TODO: implement this!
+    uint32_t virtual_address = 0;
+    int n = (int)log2(page_table->_page_size);
+    
     //   - look up physical address for variable based on its virtual address / offset
+    //int physical_address = page_table->getPhysicalAddress(pid, );
     //   - insert `value` into `memory` at physical address
     //   * note: this function only handles a single element (i.e. you'll need to call this within a loop when setting
     //           multiple elements of an array)

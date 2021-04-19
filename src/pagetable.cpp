@@ -1,6 +1,8 @@
 #include "pagetable.h"
 #include <cmath>
 
+int frame = 0;
+
 PageTable::PageTable(int page_size)
 {
     _page_size = page_size;
@@ -30,18 +32,24 @@ void PageTable::addEntry(uint32_t pid, int page_number)
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
 
-    int frame = 0; 
-    // Find free frame
-    // TODO: implement this!
-    if (_table[entry] == 0)
+    int pages = 1;
+    while (page_number > _page_size)
     {
-        printf("Table entry %d is 0\n", page_number);
-        
-    } else {
-        printf("Table entry %d is not 0\n", page_number);
+        page_number -= _page_size;
+        pages++;
     }
     
+    // Find free frame
+    // TODO: implement this!
+    /*
+    if (page_number != 0) {
+        printf("table[%d] is 0\n", page_number);
+    } else {
+        printf("table[%d] is not 0\n", page_number);
+    }
+    */
     _table[entry] = frame;
+    frame++;
 }
 
 int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
@@ -56,7 +64,7 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
     page_offset = (_page_size - 1) & virtual_address;
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
-    
+
     // If entry exists, look up frame number and convert virtual to physical address
     int address = -1;
     int frame_number = 0;
@@ -66,7 +74,7 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
         frame_number = _table[entry];
         address = (_page_size * frame_number) + page_offset;
     }
-    
+
     return address;
 }
 
@@ -82,13 +90,11 @@ void PageTable::print()
     for (i = 0; i < keys.size(); i++)
     {
         // TODO: print all pages
-        std::cout << keys[i] << std::endl;
-
         size_t sep = keys[i].find("|");
         uint32_t pid = std::stoi(keys[i].substr(0, sep));
         int page = std::stoi(keys[i].substr(sep + 1));
         int frame = _table[keys[i]];
 
-        printf(" %5u | %8d | %8d\n", pid, page, frame);
+        printf(" %4u | %11d | %12d\n", pid, page, frame);
     }
 }

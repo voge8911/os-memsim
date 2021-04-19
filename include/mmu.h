@@ -33,6 +33,7 @@ public:
     void addVariableToProcess(uint32_t pid, std::string var_name, DataType type, uint32_t size, uint32_t address);
     void print();
     DataType stringToDataType(std::string string);
+    int sizeOfType(DataType type);
 };
 
 #endif // __MMU_H_

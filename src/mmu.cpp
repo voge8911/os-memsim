@@ -1,4 +1,6 @@
 #include "mmu.h"
+#include <sstream>
+#include <iomanip>
 
 Mmu::Mmu(int memory_size)
 {
@@ -62,33 +64,52 @@ void Mmu::print()
         for (j = 0; j < _processes[i]->variables.size(); j++)
         {
             // TODO: print all variables (excluding <FREE_SPACE> entries)
-            if (_processes[i]->variables[j]->type != DataType::FreeSpace)
+            if (_processes[i]->variables[j]->type == DataType::FreeSpace)
             {
-                uint32_t pid = _processes[i]->pid;
-                std::string name = _processes[i]->variables[j]->name;
-                uint32_t virtual_addr = _processes[i]->variables[j]->virtual_address;
-                uint32_t size = _processes[i]->variables[j]->size;
-                printf("%5u | %-9s | %8u | %8u\n", pid, name.c_str(), virtual_addr, size);
+                continue;
             }
+            uint32_t pid = _processes[i]->pid;
+            std::string name = _processes[i]->variables[j]->name;
+            uint32_t virtual_addr = _processes[i]->variables[j]->virtual_address;
+            std::stringstream sstream;
+            sstream << "0x" << std::setfill('0') << std::setw(8) << std::uppercase << std::hex << virtual_addr;
+            std::string result = sstream.str();
+            uint32_t size = _processes[i]->variables[j]->size;
+            printf("%5u | %-13s | %12s | %10u\n", pid, name.c_str(), result.c_str(), size);
         }
     }
 }
 
 DataType Mmu::stringToDataType(std::string string)
 {
-    if (string.compare("Char")) {
+    if (string.compare("char") == 0) {
         return DataType::Char;
-    } else if (string.compare("Double")) {
+    } else if (string.compare("double") == 0) {
         return DataType::Double;
-    } else if (string.compare("Float")) {
+    } else if (string.compare("float") == 0) {
         return DataType::Float;
-    } else if (string.compare("Int")) {
+    } else if (string.compare("int") == 0) {
         return DataType::Int;
-    } else if (string.compare("Long")) {
+    } else if (string.compare("long") == 0) {
         return DataType::Long;
-    } else if (string.compare("Short")) {
+    } else if (string.compare("short") == 0) {
         return DataType::Short;
     } else {
         return DataType::FreeSpace;
+    }
+}
+
+int Mmu::sizeOfType(DataType type)
+{
+    if (type == DataType::Char) {
+        return 1;
+    } else if (type == DataType::Short) {
+        return 2;
+    } else if (type == DataType::Int || type == DataType::Float) {
+        return 4;
+    }  else if (type == DataType::Double || type == DataType::Long) {
+        return 8;
+    } else {
+        return -1;
     }
 }
