@@ -32,22 +32,9 @@ void PageTable::addEntry(uint32_t pid, int page_number)
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
 
-    int pages = 1;
-    while (page_number > _page_size)
-    {
-        page_number -= _page_size;
-        pages++;
-    }
-    
     // Find free frame
     // TODO: implement this!
-    /*
-    if (page_number != 0) {
-        printf("table[%d] is 0\n", page_number);
-    } else {
-        printf("table[%d] is not 0\n", page_number);
-    }
-    */
+    
     _table[entry] = frame;
     frame++;
 }

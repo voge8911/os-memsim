@@ -30,6 +30,32 @@ uint32_t Mmu::createProcess()
     return proc->pid;
 }
 
+Variable* Mmu::findFreeSpace(uint32_t pid, uint32_t size)
+{
+    Process *proc = NULL;
+    Variable *var = NULL;
+    int i;
+    for (i = 0; i < _processes.size(); i++)
+    {
+        if (_processes[i]->pid == pid)
+        {
+            proc = _processes[i];
+            for (i = 0; i < proc->variables.size(); i++)
+            {
+                if (proc->variables[i]->type == DataType::FreeSpace && 
+                    proc->variables[i]->size >= size)
+                {
+                    var = proc->variables[i];
+                    var->size -= size;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    return var;
+}
+
 void Mmu::addVariableToProcess(uint32_t pid, std::string var_name, DataType type, uint32_t size, uint32_t address)
 {
     int i;
@@ -39,6 +65,7 @@ void Mmu::addVariableToProcess(uint32_t pid, std::string var_name, DataType type
         if (_processes[i]->pid == pid)
         {
             proc = _processes[i];
+            break;
         }
     }
 
@@ -56,9 +83,9 @@ void Mmu::addVariableToProcess(uint32_t pid, std::string var_name, DataType type
 void Mmu::print()
 {
     int i, j;
-
     std::cout << " PID  | Variable Name | Virtual Addr | Size" << std::endl;
     std::cout << "------+---------------+--------------+------------" << std::endl;
+
     for (i = 0; i < _processes.size(); i++)
     {
         for (j = 0; j < _processes[i]->variables.size(); j++)
@@ -66,7 +93,7 @@ void Mmu::print()
             // TODO: print all variables (excluding <FREE_SPACE> entries)
             if (_processes[i]->variables[j]->type == DataType::FreeSpace)
             {
-                continue;
+                //continue;
             }
             uint32_t pid = _processes[i]->pid;
             std::string name = _processes[i]->variables[j]->name;
@@ -99,7 +126,7 @@ DataType Mmu::stringToDataType(std::string string)
     }
 }
 
-int Mmu::sizeOfType(DataType type)
+uint32_t Mmu::sizeOfType(DataType type)
 {
     if (type == DataType::Char) {
         return 1;
