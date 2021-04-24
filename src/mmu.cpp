@@ -30,6 +30,30 @@ uint32_t Mmu::createProcess()
     return proc->pid;
 }
 
+Variable* Mmu::getVariable(uint32_t pid, std::string name)
+{
+    Process *proc = NULL;
+    Variable *var = NULL;
+    int i;
+    for (i = 0; i < _processes.size(); i++)
+    {
+        if (_processes[i]->pid == pid)
+        {
+            proc = _processes[i];
+            for (i = 0; i < proc->variables.size(); i++)
+            {
+                if (proc->variables[i]->name.compare(name) == 0)
+                {
+                    var = proc->variables[i];
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    return var;
+}
+
 Variable* Mmu::findFreeSpace(uint32_t pid, uint32_t size)
 {
     Process *proc = NULL;
@@ -93,7 +117,7 @@ void Mmu::print()
             // TODO: print all variables (excluding <FREE_SPACE> entries)
             if (_processes[i]->variables[j]->type == DataType::FreeSpace)
             {
-                //continue;
+                continue;
             }
             uint32_t pid = _processes[i]->pid;
             std::string name = _processes[i]->variables[j]->name;

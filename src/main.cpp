@@ -11,6 +11,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory);
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table);
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
+bool stringToIntTest(std::string input);
 
 std::vector<int> pids;
 int count = 0;
@@ -78,6 +79,10 @@ int main(int argc, char **argv)
             }
             if (command_list.size() <= 1) {
                 // error
+                continue;
+            }
+            if (!stringToIntTest(command_list[1]))
+            {
                 continue;
             }
             int pid = std::stoi(command_list[1]);
@@ -182,18 +187,17 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
 void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table)
 {
     // TODO: implement this!
-    uint32_t var_size = (uint32_t) mmu->sizeOfType(type) * num_elements;
-    
+    uint32_t size_bytes = (uint32_t) mmu->sizeOfType(type) * num_elements;
     int page_size = page_table->_page_size;
     //   - find first <free space> in virtual memory (mmu) of size within a page already allocated to this process that is large enough to fit the new variable
-    Variable *var = mmu->findFreeSpace(pid, var_size);
+    Variable *var = mmu->findFreeSpace(pid, size_bytes);
     if (var != NULL)
     {
         //   - insert variable into MMU
-        mmu->addVariableToProcess(pid, var_name, type, num_elements, var->virtual_address);
+        mmu->addVariableToProcess(pid, var_name, type, size_bytes, var->virtual_address);
 
         // find page number for virtual address and virtual address + size
-        uint32_t next_virtual_address = var->virtual_address + var_size;
+        uint32_t next_virtual_address = var->virtual_address + size_bytes - 1;
         int n = (int)log2(page_size); // n = number of bits for page offset
         int page_number = 0;
         int next_page_number = 0;
@@ -201,10 +205,18 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         page_number = var->virtual_address >> n;
         next_page_number = next_virtual_address >> n;
         
+        std::cout << "Page number = " << page_number << std::endl;
+        std::cout << "Next page number = " << next_page_number << std::endl;
         // If the page number for the current virtual address is not equal to page number of the next
         // virtual address, this means the size is too big for the current page, allocate new page.
-        while (page_number < next_page_number)
+        while (page_number <= next_page_number)
         {
+            // If frame is already in the page_table, check the next page number
+            if (page_table->getFrame(pid, page_number) != -1)
+            {
+                page_number++;
+                continue;
+            }
             page_table->addEntry(pid, page_number);
             page_number++;
         }
@@ -212,7 +224,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     else
     {
         // Error not enough memory
-         fprintf(stderr, "error");
+         fprintf(stderr, "Error, not enough memory");
     }
     
     //   - print virtual memory address
@@ -220,18 +232,28 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     {
         std::cout << var->virtual_address << std::endl;
     }
-    var->virtual_address += var_size;
+    var->virtual_address += size_bytes;
 }
 
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory)
 {
     // TODO: implement this!
-    uint32_t virtual_address = 0;
+    int physical_address;
     int n = (int)log2(page_table->_page_size);
-    
-    //   - look up physical address for variable based on its virtual address / offset
-    //int physical_address = page_table->getPhysicalAddress(pid, );
-    //   - insert `value` into `memory` at physical address
+    Variable *var = mmu->getVariable(pid, var_name);
+    if (var != NULL)
+    {   
+        uint32_t type_size = mmu->sizeOfType(var->type);
+        //   - look up physical address for variable based on its virtual address / offset
+        physical_address = page_table->getPhysicalAddress(pid, (var->virtual_address + offset));
+        //   - insert `value` into `memory` at physical address
+        memcpy((uint8_t*)memory + physical_address, value, type_size);
+    }
+    else
+    {
+        // Error, variable not found
+        fprintf(stderr, "Error, variable not found");
+    }
     //   * note: this function only handles a single element (i.e. you'll need to call this within a loop when setting
     //           multiple elements of an array)
 }
@@ -248,4 +270,25 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
     // TODO: implement this!
     //   - remove process from MMU
     //   - free all pages associated with given process
+}
+
+bool stringToIntTest(std::string input)
+{
+    bool is_integer = true;
+    // go through each character of input, checking for data type errors
+    for (int i = 0; i < input.length(); i++)
+    {
+        // try input to integer conversion
+        try
+        {
+            std::stoi(input.substr(i, i + 1));
+        }
+        // if conversion fails, input must be wrong data type
+        catch (const std::invalid_argument e)
+        {
+            is_integer = false;
+            break;
+        }
+    }
+    return is_integer;
 }
