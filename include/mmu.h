@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <pagetable.h>
 
 enum DataType : uint8_t {FreeSpace, Char, Short, Int, Float, Long, Double};
 
@@ -30,6 +31,8 @@ public:
     ~Mmu();
 
     uint32_t createProcess();
+    void setFreeSpace(uint32_t pid, Variable *var);
+    bool isVariableInOwnPage(uint32_t pid, Variable* var, PageTable *page_table);
     Variable* getVariable(uint32_t pid, std::string name);
     Variable* findFreeSpace(uint32_t pid, uint32_t size);
     void addVariableToProcess(uint32_t pid, std::string var_name, DataType type, uint32_t size, uint32_t address);

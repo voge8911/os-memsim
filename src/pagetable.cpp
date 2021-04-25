@@ -27,9 +27,18 @@ std::vector<std::string> PageTable::sortedKeys()
     return keys;
 }
 
+void PageTable::freeFrame(uint32_t pid, int page_number)
+{
+    // Combination of pid and page number act as the key to look up frame number
+    std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
+
+    // Free frame
+    _table[entry] == 0;
+}
+
 int PageTable::getFrame(uint32_t pid, int page_number)
 {
-    
+    // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
     std::map<std::string, int>::iterator it = _table.find(entry);
 
@@ -50,13 +59,13 @@ void PageTable::addEntry(uint32_t pid, int page_number)
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
 
-    std::cout << "Before -> _table[" << entry << "]" << " = " << _table[entry] << std::endl;
+    //std::cout << "Before -> _table[" << entry << "]" << " = " << _table[entry] << std::endl;
     // Find free frame
     // TODO: implement this!
     _table[entry] = frame;
     frame++;
     
-    std::cout << "After -> _table[" << entry << "]" << " = " << _table[entry] << std::endl;
+    //std::cout << "After -> _table[" << entry << "]" << " = " << _table[entry] << std::endl;
 }
 
 int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
@@ -69,6 +78,7 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
     int n = (int)log2(_page_size); // n = number of bits for page offset
     page_number = virtual_address >> n;
     page_offset = (_page_size - 1) & virtual_address;
+
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
 

@@ -1,6 +1,8 @@
 #include "mmu.h"
+#include "pagetable.h"
 #include <sstream>
 #include <iomanip>
+#include <math.h>
 
 Mmu::Mmu(int memory_size)
 {
@@ -30,6 +32,90 @@ uint32_t Mmu::createProcess()
     return proc->pid;
 }
 
+void Mmu::setFreeSpace(uint32_t pid, Variable *var)
+{
+    int i;
+    int index = 0;
+    Process *proc = NULL;
+    Variable *var1 = NULL;
+    Variable *var2 = NULL;
+    for (i = 0; i < _processes.size(); i++)
+    {
+        if (_processes[i]->pid == pid)
+        {
+            proc = _processes[i];
+            for (i = 0; i < proc->variables.size(); i++)
+            {
+                if (proc->variables[i]->virtual_address == var->virtual_address)
+                {
+                    index = i;
+                    
+                    if (i < proc->variables.size() - 1)
+                    {
+                        var1 = proc->variables[i+1];
+                        std::cout << var1->name << std::endl;
+                    }
+                    if (i > 0)                   
+                    {
+                        var2 = proc->variables[i-1];
+                        std::cout << var2->name << std::endl;
+                    }
+                    break;
+                }
+            }
+        }
+        break;
+    }
+    if (var1 != NULL)
+    {
+        if (var1->type == DataType::FreeSpace)
+        {
+            var->size += var1->size;
+            proc->variables.erase(proc->variables.begin() + index + 1);
+            
+            var->virtual_address = var1->virtual_address;
+        }
+    }
+    if (var2 != NULL)
+    {
+        if (var2->type == DataType::FreeSpace)
+        {
+            var->size += var2->size;
+            proc->variables.erase(proc->variables.begin() + index - 1);
+        }
+    }
+}
+
+bool Mmu::isVariableInOwnPage(uint32_t pid, Variable* var, PageTable *page_table)
+{
+    Process *proc = NULL;
+    int var_page_number = 0;
+    int page_number = 0;
+    int n = (int)log2(page_table->_page_size); // n = number of bits for page offset
+    var_page_number = var->virtual_address >> n;
+
+    int i;
+    for (i = 0; i < _processes.size(); i++)
+    {
+        if (_processes[i]->pid == pid)
+        {
+            proc = _processes[i];
+            for (i = 0; i < proc->variables.size(); i++)
+            {
+                // Get page number of variable
+                page_number = proc->variables[i]->virtual_address >> n;
+
+                if (var_page_number == page_number)
+                {
+                    return false;
+                }
+            }
+        }
+        break;
+    }
+    return true;
+}
+
 Variable* Mmu::getVariable(uint32_t pid, std::string name)
 {
     Process *proc = NULL;
@@ -54,6 +140,7 @@ Variable* Mmu::getVariable(uint32_t pid, std::string name)
     return var;
 }
 
+// Add array fit on part of page
 Variable* Mmu::findFreeSpace(uint32_t pid, uint32_t size)
 {
     Process *proc = NULL;
@@ -71,7 +158,6 @@ Variable* Mmu::findFreeSpace(uint32_t pid, uint32_t size)
                 {
                     var = proc->variables[i];
                     var->size -= size;
-                    break;
                 }
             }
             break;
@@ -117,7 +203,7 @@ void Mmu::print()
             // TODO: print all variables (excluding <FREE_SPACE> entries)
             if (_processes[i]->variables[j]->type == DataType::FreeSpace)
             {
-                continue;
+                //continue;
             }
             uint32_t pid = _processes[i]->pid;
             std::string name = _processes[i]->variables[j]->name;
