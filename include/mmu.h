@@ -30,6 +30,7 @@ public:
     Mmu(int memory_size);
     ~Mmu();
 
+    void deleteProcess(uint32_t pid);
     uint32_t createProcess();
     void setFreeSpace(uint32_t pid, Variable *var);
     bool isVariableInOwnPage(uint32_t pid, Variable* var, PageTable *page_table);

@@ -34,6 +34,7 @@ public:
 
     int _page_size;
 
+    void freeProcessPages(uint32_t pid);
     void freeFrame(uint32_t pid, int page_number);
     int getFrame(uint32_t pid, int page_number);
     void addEntry(uint32_t pid, int page_number);

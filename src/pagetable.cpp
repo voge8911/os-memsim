@@ -27,6 +27,26 @@ std::vector<std::string> PageTable::sortedKeys()
     return keys;
 }
 
+// Frees all pages associated with given process
+void PageTable::freeProcessPages(uint32_t pid)
+{
+    std::map<std::string, int>::iterator it;
+    std::string entry;
+    int i;
+    int size = _table.size();
+    for (i=0; i < size; i++)
+    {
+        entry = std::to_string(pid) + "|" + std::to_string(i);
+        it = _table.find(entry);
+        if (it == _table.end())
+        {
+            break;
+        }
+        _table.erase(it);
+    }
+}
+
+// Free a frame in the page table
 void PageTable::freeFrame(uint32_t pid, int page_number)
 {
     // Combination of pid and page number act as the key to look up frame number
@@ -36,6 +56,7 @@ void PageTable::freeFrame(uint32_t pid, int page_number)
     _table[entry] == 0;
 }
 
+// Get a specified frame in the page table
 int PageTable::getFrame(uint32_t pid, int page_number)
 {
     // Combination of pid and page number act as the key to look up frame number
@@ -59,13 +80,10 @@ void PageTable::addEntry(uint32_t pid, int page_number)
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
 
-    //std::cout << "Before -> _table[" << entry << "]" << " = " << _table[entry] << std::endl;
     // Find free frame
     // TODO: implement this!
     _table[entry] = frame;
     frame++;
-    
-    //std::cout << "After -> _table[" << entry << "]" << " = " << _table[entry] << std::endl;
 }
 
 int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)

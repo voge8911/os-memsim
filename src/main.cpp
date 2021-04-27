@@ -53,10 +53,12 @@ int main(int argc, char **argv)
         {
             continue;
         }
+        // exit loop if command is "exit"
         else if (command == "exit")
         {
             break;
         }
+        // Check if input is a command, if so, run command
         else if (strcmp(token, "create") == 0)
         {
             while (token != NULL) {
@@ -83,12 +85,12 @@ int main(int argc, char **argv)
                 token = strtok(NULL, " ");
             }
             if (command_list.size() <= 4) {
-                // error
+                fprintf(stderr, "error: not enought arguments\n");
                 continue;
             }
             if (!stringToIntTest(command_list[1]) || !stringToIntTest(command_list[4]))
             {
-                // bad arguments
+                fprintf(stderr, "error: bad arguments\n");
                 continue;
             }
             int pid = std::stoi(command_list[1]);
@@ -116,22 +118,76 @@ int main(int argc, char **argv)
                 token = strtok(NULL, " ");
             }
             if (command_list.size() <= 4) {
-                // error: not enough arguments
+                fprintf(stderr, "error: not enought arguments\n");
                 continue;
             }
             if (!stringToIntTest(command_list[1]) || !stringToIntTest(command_list[3]))
             {
-                // bad arguments
+                fprintf(stderr, "error: bad arguments\n");
                 continue;
             }
-            int i;
             int pid = std::stoi(command_list[1]);
             std::string var_name = command_list[2];
-            uint32_t offset = std::stoi(command_list[3]);
-            for (i=4; i < command_list.size(); i++)
+            if (pidExists(pid) == false) 
             {
-                void *value = (void*)command_list[i];
-                setVariable(pid, var_name, offset, value, mmu, page_table, memory);
+                fprintf(stderr, "error: process not found\n");
+                continue;
+            }
+            if (mmu->getVariable(pid, var_name) == NULL)
+            {
+                fprintf(stderr, "error: variable not found\n");
+                continue;
+            }
+            Variable *var = mmu->getVariable(pid, var_name);
+            uint32_t offset = std::stoi(command_list[3]);
+            int i;
+            if (var->type == DataType::Char) {
+                for (i = 4; i < command_list.size(); i++)
+                {
+                    char x = *command_list[i];
+                    void *value = (void *)x;
+                    setVariable(pid, var_name, offset, value, mmu, page_table, memory);
+                }
+            } else if (var->type == DataType::Short) {
+                for (i = 4; i < command_list.size(); i++)
+                {
+                    short x = (short)std::stoi(command_list[i]);
+                    void *value = (void *)x;
+                    setVariable(pid, var_name, offset, value, mmu, page_table, memory);
+                }
+            } else if (var->type == DataType::Int) {
+                for (i = 4; i < command_list.size(); i++)
+                {
+                    int x = std::stoi(command_list[i]);
+                    void *value = (void *)x;
+                    setVariable(pid, var_name, offset, value, mmu, page_table, memory);
+                }
+            } else if (var->type == DataType::Float) {
+                for (i = 4; i < command_list.size(); i++)
+                {
+                    float x = std::stof(command_list[i]);
+                    float *p = &x;
+                    void *value = (void *)p;
+                    setVariable(pid, var_name, offset, value, mmu, page_table, memory);
+                }
+            } else if (var->type == DataType::Double) {
+                for (i = 4; i < command_list.size(); i++)
+                {
+                    double x = std::stod(command_list[i]);
+                    double *p = &x;
+                    void *value = (void *)p;
+                    setVariable(pid, var_name, offset, value, mmu, page_table, memory);
+                }
+            } else if (var->type == DataType::Long) {
+                for (i = 4; i < command_list.size(); i++)
+                {
+                    long x = std::stol(command_list[i]);
+                    void *value = (void *)x;
+                    setVariable(pid, var_name, offset, value, mmu, page_table, memory);
+                }
+            } else {
+                fprintf(stderr, "error: wrong data type\n");
+                continue;
             }
             
         }
@@ -190,7 +246,74 @@ int main(int argc, char **argv)
                     continue;
                 }
                 // Now print PID:var_name
-
+                int physical_address = page_table->getPhysicalAddress(pid, var->virtual_address);
+                int type_size = mmu->sizeOfType(var->type);
+                int num_elements = var->size / type_size;
+                if (var->type == DataType::FreeSpace)
+                {
+                    fprintf(stderr, "error: can't print Free Space\n");
+                    continue;
+                } 
+                // Print elements of variable
+                int i;
+                if (var->type == DataType::Char) {
+                    for (i = 0; i < num_elements; i++) {
+                        char x;
+                        memcpy(&x, (uint8_t *)memory + physical_address, type_size);
+                        if (i != (num_elements-1)) std::cout << x << ", ";
+                        else if (i == 3) break;
+                        else std::cout << x << std::endl;
+                    }
+                } else if (var->type == DataType::Short) {
+                    for (i = 0; i < num_elements; i++) {
+                        short x;
+                        memcpy(&x, (uint8_t *)memory + physical_address, type_size);
+                        if (i != (num_elements-1)) std::cout << x << ", ";
+                        else if (i == 3) break;
+                        else std::cout << x << std::endl;
+                    }
+                } else if (var->type == DataType::Int) {
+                    for (i = 0; i < num_elements; i++) {
+                        int x;
+                        memcpy(&x, (uint8_t *)memory + physical_address, type_size);
+                        if (i != (num_elements-1)) std::cout << x << ", ";
+                        else if (i == 3) break;
+                        else std::cout << x << std::endl;
+                    }
+                } else if (var->type == DataType::Float) {
+                    for (i = 0; i < num_elements; i++) {
+                        float x;
+                        memcpy(&x, (uint8_t *)memory + physical_address, type_size);
+                        if (i != (num_elements-1)) std::cout << x << ", ";
+                        else if (i == 3) break;
+                        else std::cout << x << std::endl;
+                    }
+                } else if (var->type == DataType::Double) {
+                    for (i = 0; i < num_elements; i++) {
+                        double x;
+                        memcpy(&x, (uint8_t *)memory + physical_address, type_size);
+                        if (i != (num_elements-1)) std::cout << x << ", ";
+                        else if (i == 3) break;
+                        else std::cout << x << std::endl;
+                    }
+                } else if (var->type == DataType::Long) {
+                    for (i = 0; i < num_elements; i++) {
+                        long x;
+                        memcpy(&x, (uint8_t *)memory + physical_address, type_size);
+                        if (i != (num_elements-1)) std::cout << x << ", ";
+                        else if (i == 3) break;
+                        else std::cout << x << std::endl;
+                    }
+                } else {
+                    fprintf(stderr, "error: wrong data type");
+                    continue;
+                }
+                // If variable has more than 4 elements, just print the first 4 followed by "... [N items]"
+                // (where N is the number of elements)
+                if (num_elements > 4)
+                {
+                    printf("... [%d items]\n", num_elements);
+                }
             }
         }
         else if (strcmp(token, "free") == 0)
@@ -211,8 +334,18 @@ int main(int argc, char **argv)
         }
         else if (strcmp(token, "terminate") == 0)
         {
-
-
+            while (token != NULL) {
+                command_list.push_back(token);
+                token = strtok(NULL, " ");
+            }
+            if (command_list.size() < 2) {  // not enough arguments
+                continue;
+            }
+            if (!stringToIntTest(command_list[1])) {   // bad pid
+                continue;
+            }
+            uint32_t pid = std::stoi(command_list[1]);
+            terminateProcess(pid, mmu, page_table);
         }
         else
         {
@@ -311,8 +444,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         }
         else
         {
-            // Error not enough memory
-            fprintf(stderr, "Error, not enough memory\n");
+            fprintf(stderr, "error: not enough memory\n");
         }
         
     }
@@ -322,22 +454,24 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
 {
     // TODO: implement this!
     Variable *var = mmu->getVariable(pid, var_name);
+    offset = offset * mmu->sizeOfType(var->type);
 
     if (var != NULL)
     {   
-        if (var->type == DataType::Char) *((char*)value);
-        if (var->type == DataType::Short) *((short*)value);
-        if (var->type == DataType::Int) *((int*)value);
-        if (var->type == DataType::Long) *((long*)value);
-        if (var->type == DataType::Double) *((double*)value);
-        if (var->type == DataType::Float) *((float*)value);
-        if (var->type == DataType::FreeSpace) fprintf(stderr, "error: can't set Free Space\n");
-
         uint32_t type_size = mmu->sizeOfType(var->type);
         //   - look up physical address for variable based on its virtual address / offset
         int physical_address = page_table->getPhysicalAddress(pid, (var->virtual_address + offset));
+        std::cout << var_name << " = " << physical_address << std::endl;
+        std::cout << type_size << std::endl;
         //   - insert `value` into `memory` at physical address
-        memcpy((uint8_t*)memory + physical_address, value, type_size);
+        if (var->type == DataType::Double || var->type == DataType::Float)
+        {
+            memcpy((uint8_t*)memory + physical_address, value, type_size);
+        }
+        else
+        {
+            memcpy((uint8_t*)memory + physical_address, &value, type_size);
+        }
     }
     else
     {
@@ -367,14 +501,12 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
 
     if (var != NULL)
     {
-        
         page_number = var->virtual_address >> n;
         //   - free page if this variable was the only one on a given page
         if (mmu->isVariableInOwnPage(pid, var, page_table))
         {
             page_table->freeFrame(pid, page_number);
         }
-
         //   - remove entry from MMU
         var->type = DataType::FreeSpace;
         var->name = "<FREE_SPACE>";
@@ -384,13 +516,11 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
     else
     {
         if (pidExists(pid) == false)
-        {
-            // Error, process not found
+        {   
             fprintf(stderr, "error: process not found\n");
         }
         else
         {
-            // Error, variable not found
             fprintf(stderr, "error: variable not found\n");
         }
     }
@@ -400,7 +530,9 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
 {
     // TODO: implement this!
     //   - remove process from MMU
+    mmu->deleteProcess(pid);
     //   - free all pages associated with given process
+    page_table->freeProcessPages(pid);
 }
 
 // what about doubles?

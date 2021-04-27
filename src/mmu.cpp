@@ -14,6 +14,19 @@ Mmu::~Mmu()
 {
 }
 
+// removes the specified process from the mmu
+void Mmu::deleteProcess(uint32_t pid)
+{
+    int i;
+    for (i = 0; i < _processes.size(); i++)
+    {
+        if (_processes[i]->pid == pid)
+        {
+            _processes.erase(_processes.begin() + i);
+        }
+    }
+}
+
 uint32_t Mmu::createProcess()
 {
     Process *proc = new Process();
@@ -32,6 +45,11 @@ uint32_t Mmu::createProcess()
     return proc->pid;
 }
 
+// Inputs: pid -> process pid
+//         var -> A FreeSpace variable
+//
+// Check if the variable just before or just after `var` are also free space 
+// if so merge them into one larger free space
 void Mmu::setFreeSpace(uint32_t pid, Variable *var)
 {
     int i;
@@ -39,6 +57,7 @@ void Mmu::setFreeSpace(uint32_t pid, Variable *var)
     Process *proc = NULL;
     Variable *var1 = NULL;
     Variable *var2 = NULL;
+    // Search for `var`
     for (i = 0; i < _processes.size(); i++)
     {
         if (_processes[i]->pid == pid)
@@ -47,18 +66,16 @@ void Mmu::setFreeSpace(uint32_t pid, Variable *var)
             for (i = 0; i < proc->variables.size(); i++)
             {
                 if (proc->variables[i]->virtual_address == var->virtual_address)
-                {
+                {   
+                    // get `var` index and variables above and below if they exist
                     index = i;
-                    
                     if (i < proc->variables.size() - 1)
                     {
                         var1 = proc->variables[i+1];
-                        std::cout << var1->name << std::endl;
                     }
                     if (i > 0)                   
                     {
                         var2 = proc->variables[i-1];
-                        std::cout << var2->name << std::endl;
                     }
                     break;
                 }
@@ -66,6 +83,7 @@ void Mmu::setFreeSpace(uint32_t pid, Variable *var)
         }
         break;
     }
+    // Merge free space(s)
     if (var1 != NULL)
     {
         if (var1->type == DataType::FreeSpace)
@@ -86,6 +104,8 @@ void Mmu::setFreeSpace(uint32_t pid, Variable *var)
     }
 }
 
+// Check if any variables in a process have the same page number as `var`
+// If so, return true, otherwise return false 
 bool Mmu::isVariableInOwnPage(uint32_t pid, Variable* var, PageTable *page_table)
 {
     Process *proc = NULL;
@@ -116,6 +136,7 @@ bool Mmu::isVariableInOwnPage(uint32_t pid, Variable* var, PageTable *page_table
     return true;
 }
 
+// Get a variable given the process id and the variable name
 Variable* Mmu::getVariable(uint32_t pid, std::string name)
 {
     Process *proc = NULL;
@@ -203,7 +224,7 @@ void Mmu::print()
             // TODO: print all variables (excluding <FREE_SPACE> entries)
             if (_processes[i]->variables[j]->type == DataType::FreeSpace)
             {
-                //continue;
+                continue;
             }
             uint32_t pid = _processes[i]->pid;
             std::string name = _processes[i]->variables[j]->name;
