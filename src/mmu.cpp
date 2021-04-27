@@ -106,13 +106,12 @@ void Mmu::setFreeSpace(uint32_t pid, Variable *var)
 
 // Check if any variables in a process have the same page number as `var`
 // If so, return true, otherwise return false 
-bool Mmu::isVariableInOwnPage(uint32_t pid, Variable* var, PageTable *page_table)
+bool Mmu::isVariableInOwnPage(uint32_t pid, Variable* var, int page_number, PageTable *page_table)
 {
     Process *proc = NULL;
     int var_page_number = 0;
-    int page_number = 0;
+    int var_next_page_number = 0;
     int n = (int)log2(page_table->_page_size); // n = number of bits for page offset
-    var_page_number = var->virtual_address >> n;
 
     int i;
     for (i = 0; i < _processes.size(); i++)
@@ -123,11 +122,20 @@ bool Mmu::isVariableInOwnPage(uint32_t pid, Variable* var, PageTable *page_table
             for (i = 0; i < proc->variables.size(); i++)
             {
                 // Get page number of variable
-                page_number = proc->variables[i]->virtual_address >> n;
-
-                if (var_page_number == page_number)
+                var_page_number = proc->variables[i]->virtual_address >> n;
+                var_next_page_number = proc->variables[i]->virtual_address + proc->variables[i]->size - 1 >> n;
+                while (var_page_number <= var_next_page_number)
                 {
-                    return false;
+                    if (proc->variables[i]->name.compare("<FREE_SPACE>") == 0 || var->name.compare(proc->variables[i]->name) == 0)
+                    {
+                        break;
+                    }
+
+                    if (page_number == var_page_number)
+                    {
+                        return false;
+                    }
+                    var_page_number++;
                 }
             }
         }

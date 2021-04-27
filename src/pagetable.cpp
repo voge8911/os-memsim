@@ -1,8 +1,6 @@
 #include "pagetable.h"
 #include <cmath>
 
-int frame = 0;
-
 PageTable::PageTable(int page_size)
 {
     _page_size = page_size;
@@ -53,7 +51,7 @@ void PageTable::freeFrame(uint32_t pid, int page_number)
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
 
     // Free frame
-    _table[entry] == 0;
+    _table.erase(entry);
 }
 
 // Get a specified frame in the page table
@@ -82,8 +80,32 @@ void PageTable::addEntry(uint32_t pid, int page_number)
 
     // Find free frame
     // TODO: implement this!
-    _table[entry] = frame;
-    frame++;
+    std::vector<std::string> keys = sortedKeys();
+    int frame = 0;
+    
+    // loop through page table
+    while (1)
+    {   
+        int i;
+        bool isFree = true;
+        for (i = 0; i < keys.size(); i++)
+        {
+            // if frame is in use, test next lowest frame number
+            if (frame == _table[keys[i]])
+            {
+                isFree = false;
+                frame++;
+                break;
+            }
+        }
+        if (isFree)
+        {
+            _table[entry] = frame;
+            break;
+        }
+    }
+
+    
 }
 
 int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
