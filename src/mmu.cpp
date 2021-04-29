@@ -187,6 +187,7 @@ Variable* Mmu::findFreeSpace(uint32_t pid, uint32_t size)
                 {
                     var = proc->variables[i];
                     var->size -= size;
+                    break;
                 }
             }
             break;
@@ -232,7 +233,7 @@ void Mmu::print()
             // TODO: print all variables (excluding <FREE_SPACE> entries)
             if (_processes[i]->variables[j]->type == DataType::FreeSpace)
             {
-                continue;
+                //continue;
             }
             uint32_t pid = _processes[i]->pid;
             std::string name = _processes[i]->variables[j]->name;
@@ -261,7 +262,7 @@ DataType Mmu::stringToDataType(std::string string)
     } else if (string.compare("short") == 0) {
         return DataType::Short;
     } else {
-        return DataType::FreeSpace;
+        return DataType::Err;
     }
 }
 
@@ -273,8 +274,10 @@ uint32_t Mmu::sizeOfType(DataType type)
         return 2;
     } else if (type == DataType::Int || type == DataType::Float) {
         return 4;
-    }  else if (type == DataType::Double || type == DataType::Long) {
+    } else if (type == DataType::Double || type == DataType::Long) {
         return 8;
+    } else if (type == DataType::FreeSpace) {
+        return 1;
     } else {
         return -1;
     }

@@ -67,9 +67,9 @@ int main(int argc, char **argv)
                 command_list.push_back(token);
                 token = strtok(NULL, " ");
             }
-            if (command_list.size() <= 1)
+            if (command_list.size() <= 2 || command_list.size() >= 4)
             {
-                fprintf(stderr, "error: not enough arguments\n");
+                fprintf(stderr, "error: incorrect number of arguments\n");
                 continue;
             }
             if (!stringToIntTest(command_list[1]) || !stringToIntTest(command_list[2]))
@@ -88,9 +88,9 @@ int main(int argc, char **argv)
                 command_list.push_back(token);
                 token = strtok(NULL, " ");
             }
-            if (command_list.size() <= 4)
+            if (command_list.size() <= 4 || command_list.size() >= 6)
             {
-                fprintf(stderr, "error: not enought arguments\n");
+                fprintf(stderr, "error: incorrect number of arguments\n");
                 continue;
             }
             if (!stringToIntTest(command_list[1]) || !stringToIntTest(command_list[4]))
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
             }
             if (command_list.size() <= 4)
             {
-                fprintf(stderr, "error: not enought arguments\n");
+                fprintf(stderr, "error: not enough arguments\n");
                 continue;
             }
             if (!stringToIntTest(command_list[1]) || !stringToIntTest(command_list[3]))
@@ -147,7 +147,28 @@ int main(int argc, char **argv)
             }
             Variable *var = mmu->getVariable(pid, var_name);
             uint32_t offset = std::stoi(command_list[3]);
+            int num_elements = var->size / mmu->sizeOfType(var->type);
+
+            if (offset > num_elements)
+            {
+                fprintf(stderr, "error: offset exceeds the number of elements for this variable\n");
+                continue;
+            }
+            bool bad_input = false;
             int i;
+            for (i = 4; i < command_list.size(); i++)
+            {
+                if (var->type != DataType::Char && !stringToIntTest(command_list[i]))
+                {
+                    bad_input = true;
+                    break;
+                }
+            }
+            if (bad_input)
+            {
+                fprintf(stderr, "error: bad input\n");
+                continue;
+            }
             if (var->type == DataType::Char)
             {
                 for (i = 4; i < command_list.size(); i++)
@@ -210,7 +231,7 @@ int main(int argc, char **argv)
                     offset++;
                 }
             }
-            else
+            else 
             {
                 fprintf(stderr, "error: wrong data type\n");
                 continue;
@@ -493,10 +514,14 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         int page_number = var->virtual_address >> n;
         int next_page_number = var->virtual_address + size_bytes - 1 >> n;
 
+        if (next_page_number > 500)
+        {
+            printf("That's a lot of memory, please wait...\n");
+        }
         // If the page number for the current virtual address is not equal to page number of the next
         // virtual address, this means the size is too big for the current page, allocate new page.
         while (page_number <= next_page_number)
-        {
+        {   
             // If frame is not already in the page_table, add an entry for that page
             if (page_table->getFrame(pid, page_number) == -1)
             {
@@ -516,6 +541,10 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         if (pidExists(pid) == false)
         {
             fprintf(stderr, "error: process not found\n");
+        }
+        else if (type == DataType::Err)
+        {
+            fprintf(stderr, "error: bad data type\n");
         }
         else
         {

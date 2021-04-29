@@ -6,7 +6,7 @@
 #include <vector>
 #include <pagetable.h>
 
-enum DataType : uint8_t {FreeSpace, Char, Short, Int, Float, Long, Double};
+enum DataType : uint8_t {FreeSpace, Char, Short, Int, Float, Long, Double, Err};
 
 typedef struct Variable {
     std::string name;
