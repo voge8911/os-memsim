@@ -69,12 +69,12 @@ int main(int argc, char **argv)
             }
             if (command_list.size() <= 1)
             {
-                // error
+                fprintf(stderr, "error: not enough arguments\n");
                 continue;
             }
             if (!stringToIntTest(command_list[1]) || !stringToIntTest(command_list[2]))
             {
-                //error
+                fprintf(stderr, "error: bad arguments\n");
                 continue;
             }
             int text_size = std::stoi(command_list[1]);
@@ -469,9 +469,9 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
     pids.push_back(pid);
     //   - allocate new variables for the <TEXT>, <GLOBALS>, and <STACK>
     //   - DataType is Char because `n` Chars is `n` bytes
-    allocateVariable(pid, "<TEXT>", DataType::Char, text_size, mmu, page_table);
+    allocateVariable(pid, "<TEXT>"   , DataType::Char, text_size, mmu, page_table);
     allocateVariable(pid, "<GLOBALS>", DataType::Char, data_size, mmu, page_table);
-    allocateVariable(pid, "<STACK>", DataType::Char, 65536, mmu, page_table);
+    allocateVariable(pid, "<STACK>"  , DataType::Char, 65536    , mmu, page_table);
     //   - print pid
     printf("%d\n", pid);
 }
@@ -497,13 +497,11 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         // virtual address, this means the size is too big for the current page, allocate new page.
         while (page_number <= next_page_number)
         {
-            // If frame is already in the page_table, check the next page number
-            if (page_table->getFrame(pid, page_number) != -1)
+            // If frame is not already in the page_table, add an entry for that page
+            if (page_table->getFrame(pid, page_number) == -1)
             {
-                page_number++;
-                continue;
+                page_table->addEntry(pid, page_number);
             }
-            page_table->addEntry(pid, page_number);
             page_number++;
         }
         //   - print virtual memory address
@@ -537,7 +535,6 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
         uint32_t type_size = mmu->sizeOfType(var->type);
         //   - look up physical address for variable based on its virtual address / offset
         int physical_address = page_table->getPhysicalAddress(pid, (var->virtual_address + offset));
-        std::cout << "physical address = " << physical_address << " offset = " << offset << std::endl;
         //   - insert `value` into `memory` at physical address
         if (var->type == DataType::Double || var->type == DataType::Float)
         {
@@ -593,7 +590,7 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
         var->type = DataType::FreeSpace;
         var->name = "<FREE_SPACE>";
 
-        mmu->setFreeSpace(pid, var);
+        mmu->mergeFreeSpace(pid, var);
     }
     else
     {
@@ -610,11 +607,13 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
 
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
 {
-    // TODO: implement this!
     //   - remove process from MMU
     mmu->deleteProcess(pid);
     //   - free all pages associated with given process
     page_table->freeProcessPages(pid);
+    //   - remove pid from list of pids
+    std::vector<int>::iterator it = pids.begin() + (pid-1024);
+    pids.erase(it);
 }
 
 // Returns: true if input can be converted to an integer, false otherwise

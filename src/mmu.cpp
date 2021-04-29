@@ -50,7 +50,7 @@ uint32_t Mmu::createProcess()
 //
 // Check if the variable just before or just after `var` are also free space 
 // if so merge them into one larger free space
-void Mmu::setFreeSpace(uint32_t pid, Variable *var)
+void Mmu::mergeFreeSpace(uint32_t pid, Variable *var)
 {
     int i;
     int index = 0;

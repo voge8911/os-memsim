@@ -49,7 +49,6 @@ void PageTable::freeFrame(uint32_t pid, int page_number)
 {
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
-
     // Free frame
     _table.erase(entry);
 }
@@ -82,16 +81,17 @@ void PageTable::addEntry(uint32_t pid, int page_number)
     // TODO: implement this!
     std::vector<std::string> keys = sortedKeys();
     int frame = 0;
+    int current_frame = 0;
     
-    // loop through page table
     while (1)
     {   
-        int i;
         bool isFree = true;
+        int i; // loop through page table
         for (i = 0; i < keys.size(); i++)
         {
-            // if frame is in use, test next lowest frame number
-            if (frame == _table[keys[i]])
+            // if `frame` is used by another frame, test next lowest frame number
+            current_frame = _table[keys[i]];
+            if (frame == current_frame)
             {
                 isFree = false;
                 frame++;
@@ -103,9 +103,7 @@ void PageTable::addEntry(uint32_t pid, int page_number)
             _table[entry] = frame;
             break;
         }
-    }
-
-    
+    }    
 }
 
 int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
